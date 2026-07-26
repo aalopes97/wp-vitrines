@@ -16,6 +16,9 @@ define( 'VITRINE_PATH',    plugin_dir_path( __FILE__ ) );
 define( 'VITRINE_URL',     plugin_dir_url( __FILE__ ) );
 
 require_once VITRINE_PATH . 'class-plugin.php';
+require_once VITRINE_PATH . 'class-vitrine-i18n.php';
+require_once VITRINE_PATH . 'class-vitrine-polylang.php';
+require_once VITRINE_PATH . 'class-vitrine-translations-admin.php';
 require_once VITRINE_PATH . 'class-vitrine-icons.php';
 require_once VITRINE_PATH . 'class-vitrine-hero.php';
 require_once VITRINE_PATH . 'class-editor.php';

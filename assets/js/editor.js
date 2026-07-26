@@ -11,11 +11,21 @@
 (function ($) {
     'use strict';
 
+    var builderI18n = vitrineData.i18n || {};
+
+    function t(key, fallback) {
+        if (builderI18n[key]) {
+            return builderI18n[key];
+        }
+        return fallback !== undefined ? fallback : key;
+    }
+
     /* ──────────────────────────── Estado ──────────────────────────── */
 
     var layout     = vitrineData.layout || [];
     var elements   = vitrineData.elements || {};
     var selectedId = null;
+    var settingsPanelItemId = null;
     var itemgridExpandedIdx = null;
     var itemgridSortInstances = [];
     var itemcarouselExpandedIdx = null;
@@ -248,15 +258,15 @@
 
     function getContainerDisplayName(settings) {
         var name = settings && settings.name ? String(settings.name).trim() : '';
-        return name || 'Container';
+        return name || t('ui.container_default', 'Container');
     }
 
     function getContainerDirectionUi(direction) {
         var isRow = direction === 'row';
         return {
             label: isRow ? 'Linha' : 'Coluna',
-            previewLabel: isRow ? 'Linha (→)' : 'Coluna (↓)',
-            icon: isRow ? 'dashicons-arrow-right-alt2' : 'dashicons-arrow-down-alt2'
+            previewLabel: isRow ? 'Linha (↓)' : 'Coluna (→)',
+            icon: isRow ? 'dashicons-arrow-down-alt2' : 'dashicons-arrow-right-alt2'
         };
     }
 
@@ -738,7 +748,10 @@
             }
             case 'itemcarousel': {
                 var icItems = settings.items || [];
-                var icSpv   = Math.max(1, Math.min(3, parseInt(settings.slides_per_view || 3, 10)));
+                var icSpv   = Math.max(1, Math.min(4, parseInt(
+                    settings.slides_per_view_desktop || settings.slides_per_view || 3,
+                    10
+                )));
                 var icGap   = parseInt(settings.gap || 20, 10);
                 var icBg    = escapeAttr(settings.card_bg || '#ffffff');
                 var icRad   = parseInt(settings.card_radius || 12, 10);
@@ -1582,12 +1595,16 @@
     }
 
     function buildSettingsFieldGroup(item, elDef, field) {
+        if (field.type === 'heading') {
+            return '<div class="vitrine-settings-section-title">' + escapeHtml(field.label) + '</div>';
+        }
+
         var val = item.settings[field.name] !== undefined ? item.settings[field.name] : (elDef.defaults[field.name] || '');
         var inputHtml = '';
 
         switch (field.type) {
             case 'textarea':
-                inputHtml = '<textarea id="vitrine-field-mce-' + escapeAttr(field.name) + '" class="vitrine-field-mce" data-field="' + escapeAttr(field.name) + '" rows="4">' + safeTextareaHtml(val) + '</textarea>';
+                inputHtml = '<textarea id="vitrine-field-mce-' + escapeAttr(selectedId) + '-' + escapeAttr(field.name) + '" class="vitrine-field-mce" data-field="' + escapeAttr(field.name) + '" rows="4">' + safeTextareaHtml(val) + '</textarea>';
                 if (item.type === 'imagelinks' && field.name === 'content') {
                     inputHtml += '<p class="vitrine-field-hint">Editor livre abaixo da imagem — negrito, itálico, links, listas etc.</p>';
                 }
@@ -1602,7 +1619,11 @@
                 }
                 break;
             case 'number':
-                inputHtml = '<input type="number" class="vitrine-field" data-field="' + escapeAttr(field.name) + '" value="' + escapeAttr(val) + '" />';
+                inputHtml = '<input type="number" class="vitrine-field" data-field="' + escapeAttr(field.name) + '" value="' + escapeAttr(val) + '"';
+                if (item.type === 'itemcarousel' && /^slides_per_view_/.test(field.name)) {
+                    inputHtml += ' min="1" max="4" step="1"';
+                }
+                inputHtml += ' />';
                 break;
             case 'color':
                 if (item.type === 'text' && field.name === 'bg_color') {
@@ -1666,6 +1687,9 @@
         if (item.type === 'imagelinks' && field.name === 'image_height') {
             fieldHint = '<p class="vitrine-field-hint">Use 0 para ocultar a área da imagem (só legenda/conteúdo).</p>';
         }
+        if (item.type === 'itemcarousel' && /^slides_per_view_/.test(field.name)) {
+            fieldHint = '<p class="vitrine-field-hint">Quantidade de slides visíveis ao mesmo tempo (1 a 4).</p>';
+        }
 
         return '<div class="vitrine-field-group' + extraClass + '">' +
             '<label>' + escapeHtml(field.label) + '</label>' +
@@ -1686,23 +1710,32 @@
         '</div>';
     }
 
-    function renderSettings() {
+    function flushActiveSettingsPanel() {
+        if (_skipMCESync || !settingsPanelItemId) return;
+        var restoreSelectedId = selectedId;
+        selectedId = settingsPanelItemId;
         syncAllAranhaMCE();
         syncAllItemgridMCE();
         syncAllItemcarouselMCE();
         syncAllFieldMCE();
+        selectedId = restoreSelectedId;
+    }
+
+    function renderSettings() {
+        flushActiveSettingsPanel();
         destroyAllMCE();
         var $panel = $('#vitrine-settings-panel');
         $panel.empty().removeClass('has-tabs');
 
         if (!selectedId) {
+            settingsPanelItemId = null;
             $('#vitrine-settings-el-icon').attr('class', 'dashicons dashicons-admin-settings');
-            $('#vitrine-settings-el-label').text('Configurações');
+            $('#vitrine-settings-el-label').text(t('ui.settings', 'Settings'));
             $('#vitrine-settings-sidebar').removeClass('has-selection');
             $panel.html(
                 '<div class="vitrine-settings-empty-state">' +
                     '<span class="dashicons dashicons-edit-large"></span>' +
-                    '<p>Clique em um elemento no canvas para editar as suas configurações.</p>' +
+                    '<p>' + escapeHtml(t('ui.settings_empty', 'Click an element on the canvas to edit its settings.')) + '</p>' +
                 '</div>'
             );
             return;
@@ -1731,7 +1764,7 @@
         $('#vitrine-settings-el-icon').attr('class', 'dashicons ' + (elDef.icon || 'dashicons-admin-settings'));
         var settingsHeaderLabel = item.type === 'container'
             ? getContainerDisplayName($.extend({}, elDef.defaults, item.settings))
-            : (elDef.label || 'Configurações');
+            : (elDef.label || t('ui.settings', 'Settings'));
         $('#vitrine-settings-el-label').text(settingsHeaderLabel);
         $('#vitrine-settings-sidebar').addClass('has-selection');
 
@@ -1742,13 +1775,13 @@
         $panel.addClass('has-tabs');
         $panel.append(
             '<div class="vitrine-settings-main-tabs">' +
-                '<button type="button" class="vitrine-settings-main-tab' + contentTabActive + '" data-settings-tab="content" title="Conteúdo">' +
+                '<button type="button" class="vitrine-settings-main-tab' + contentTabActive + '" data-settings-tab="content" title="' + escapeAttr(t('ui.content_tab', 'Content')) + '">' +
                     '<span class="dashicons dashicons-edit"></span>' +
-                    '<span class="vitrine-settings-main-tab-label">Conteúdo</span>' +
+                    '<span class="vitrine-settings-main-tab-label">' + escapeHtml(t('ui.content_tab', 'Content')) + '</span>' +
                 '</button>' +
-                '<button type="button" class="vitrine-settings-main-tab' + styleTabActive + '" data-settings-tab="style" title="Estilos">' +
+                '<button type="button" class="vitrine-settings-main-tab' + styleTabActive + '" data-settings-tab="style" title="' + escapeAttr(t('ui.style_tab', 'Styles')) + '">' +
                     '<span class="dashicons dashicons-admin-appearance"></span>' +
-                    '<span class="vitrine-settings-main-tab-label">Estilos</span>' +
+                    '<span class="vitrine-settings-main-tab-label">' + escapeHtml(t('ui.style_tab', 'Styles')) + '</span>' +
                 '</button>' +
             '</div>' +
             '<div class="vitrine-settings-tab-pane' + contentTabActive + '" data-settings-pane="content"></div>' +
@@ -1843,6 +1876,8 @@
             setTimeout(initToggleMCE, 50);
             setTimeout(initToggleSort, 80);
         }
+
+        settingsPanelItemId = selectedId;
     }
 
     /**
@@ -3998,10 +4033,7 @@
     }
 
     function saveLayout(onDone) {
-        syncAllAranhaMCE();
-        syncAllItemgridMCE();
-        syncAllItemcarouselMCE();
-        syncAllFieldMCE();
+        flushActiveSettingsPanel();
 
         return $.ajax({
             url: vitrineData.ajaxUrl,
@@ -4226,6 +4258,40 @@
             e.preventDefault();
             var idx = $(this).data('tpl-idx');
             applyTemplate(idx);
+        });
+
+        $(document).on('click', '#vitrine-clone-lang-btn', function (e) {
+            e.preventDefault();
+            var lang = $('#vitrine-clone-lang').val();
+            if (!lang || !vitrineData.polylang || !vitrineData.polylang.active) {
+                return;
+            }
+            var $btn = $(this).prop('disabled', true);
+            flushActiveSettingsPanel();
+            saveLayout(function (success) {
+                if (!success) {
+                    $btn.prop('disabled', false);
+                    window.alert(t('ui.clone_error', 'Could not clone vitrine.'));
+                    return;
+                }
+                $.post(vitrineData.ajaxUrl, {
+                    action:  'vitrine_clone_to_language',
+                    nonce:   vitrineData.nonce,
+                    post_id: vitrineData.postId,
+                    lang:    lang
+                }).done(function (res) {
+                    if (res && res.success && res.data && res.data.edit_url) {
+                        window.location.href = res.data.edit_url;
+                        return;
+                    }
+                    var msg = (res && res.data && res.data.message) ? res.data.message : t('ui.clone_error', 'Could not clone vitrine.');
+                    window.alert(msg);
+                    $btn.prop('disabled', false);
+                }).fail(function () {
+                    window.alert(t('ui.clone_error', 'Could not clone vitrine.'));
+                    $btn.prop('disabled', false);
+                });
+            });
         });
 
         $(document).on('click', '#vitrine-preview-btn', function (e) {

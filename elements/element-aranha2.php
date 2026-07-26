@@ -80,7 +80,7 @@ class Vitrine_Element_Aranha2 extends Vitrine_Element {
         $card_style      = $this->sanitize_card_style( $s['card_style'] );
         $use_preset      = 'default' !== $card_style;
         $card_min_height = max( 80, intval( isset( $s['card_min_height'] ) ? $s['card_min_height'] : 190 ) );
-        $orbit_radius    = $this->resolve_orbit_radius( $radius, $center_size, $use_preset, $card_min_height );
+        $orbit_radius    = $this->resolve_orbit_radius( $radius, $center_size, $use_preset, $card_min_height, $n );
 
         $stage       = $this->compute_stage_size( $center_size, $orbit_radius, $n, $use_preset, $card_min_height );
         $stage_w     = $stage['w'];
@@ -192,18 +192,29 @@ class Vitrine_Element_Aranha2 extends Vitrine_Element {
         return $output;
     }
 
-    private function resolve_orbit_radius( $radius, $center_size, $use_preset, $card_min_height = 190 ) {
+    private function resolve_orbit_radius( $radius, $center_size, $use_preset, $card_min_height = 190, $n_items = 0 ) {
         $radius = max( 80, intval( $radius ) );
 
         if ( ! $use_preset ) {
             return $radius;
         }
 
-        $card_half_w = 140;
-        $card_half_h = max( 95, $card_min_height / 2 );
+        $card_w      = 280;
+        $card_h      = max( 190, intval( $card_min_height ) );
+        $card_half_w = $card_w / 2;
+        $card_half_h = max( 95, $card_h / 2 );
         $card_diag   = sqrt( ( $card_half_w * $card_half_w ) + ( $card_half_h * $card_half_h ) );
-        $clearance   = 56;
+        $clearance   = 64;
         $min_radius  = (int) ceil( $card_diag + ( $center_size / 2 ) + $clearance );
+
+        $n_items = max( 0, intval( $n_items ) );
+        if ( $n_items > 1 ) {
+            $gap_w = 36;
+            $gap_h = 28;
+            $by_w  = (int) ceil( ( $card_w + $gap_w ) / ( 2 * sin( M_PI / $n_items ) ) );
+            $by_h  = (int) ceil( ( $card_h + $gap_h ) / ( 2 * sin( M_PI / $n_items ) ) );
+            $min_radius = max( $min_radius, $by_w, $by_h );
+        }
 
         return max( $radius, $min_radius );
     }
@@ -213,13 +224,13 @@ class Vitrine_Element_Aranha2 extends Vitrine_Element {
         $card_half_w = $card_max_w / 2;
         $card_half_h = $use_preset ? max( 95, $card_min_height / 2 ) : 50;
 
-        $pad_w = $use_preset ? (int) ceil( $card_half_w + 56 ) : 40;
-        $pad_h = $use_preset ? (int) ceil( $card_half_h + 56 ) : 28;
+        $pad_w = $use_preset ? (int) ceil( $card_half_w + 72 ) : 40;
+        $pad_h = $use_preset ? (int) ceil( $card_half_h + 72 ) : 28;
 
         $stage_w = $center_size + 2 * $radius + 2 * $pad_w;
         $stage_h = $stage_w;
 
-        for ( $pass = 0; $pass < 3; $pass++ ) {
+        for ( $pass = 0; $pass < 4; $pass++ ) {
             $r_pct_w  = $radius / max( 1, $stage_w ) * 100;
             $r_pct_h  = $radius / max( 1, $stage_h ) * 100;
             $cs_pct_w = $center_size / max( 1, $stage_w ) * 100;
@@ -249,10 +260,10 @@ class Vitrine_Element_Aranha2 extends Vitrine_Element {
             $span_h = max( 48, $y_max - $y_min );
 
             $need_w = (int) ceil( $stage_w * ( $span_w / 100 ) );
-            $need_h = (int) ceil( $stage_w * ( $span_h / 100 ) );
+            $need_h = (int) ceil( $stage_h * ( $span_h / 100 ) );
 
             $stage_w = max( $stage_w, $need_w );
-            $stage_h = max( $need_h, $center_size + 2 * $pad_h + (int) ceil( $card_half_h * 0.5 ) );
+            $stage_h = max( $stage_h, $need_h, $center_size + 2 * $pad_h + (int) ceil( $card_half_h * 0.5 ) );
         }
 
         return array(
