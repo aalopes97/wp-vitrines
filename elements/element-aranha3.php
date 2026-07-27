@@ -115,7 +115,6 @@ class Vitrine_Element_Aranha3 extends Vitrine_Element {
         $card_min_height    = max( 80, intval( isset( $s['card_min_height'] ) ? $s['card_min_height'] : 190 ) );
         $card_height        = $use_preset ? $card_min_height : $card_height;
         $wrapper_padding    = max( 0, intval( isset( $s['wrapper_padding'] ) ? $s['wrapper_padding'] : 28 ) );
-        $side_min_w         = $use_preset ? 260 : 220;
         $wrapper_border     = ( isset( $s['wrapper_border_style'] ) && 'solid' === $s['wrapper_border_style'] )
             ? 'border:1px solid #d0d0d0;'
             : 'border:none;';
@@ -147,47 +146,32 @@ class Vitrine_Element_Aranha3 extends Vitrine_Element {
 
         $output = '<div class="vitrine-el-aranha3 vitrine-a3--animate vitrine-card-style--' . esc_attr( $card_style ) . '" style="' . esc_attr( $wrap_style ) . '">';
 
-        $frame_style = 'display:flex;align-items:flex-start;justify-content:center;gap:' . $gap . 'px;max-width:1100px;margin:0 auto;box-sizing:border-box;';
-        $side_style  = 'display:flex;flex-direction:column;align-items:stretch;align-self:flex-start;flex:0 1 280px;min-width:' . $side_min_w . 'px;gap:' . $gap . 'px;box-sizing:border-box;width:100%;';
-        $core_style  = 'display:flex;flex-direction:column;align-items:stretch;flex:1 1 ' . $core_max_width . 'px;min-width:220px;max-width:' . $core_max_width . 'px;align-self:flex-start;gap:' . $gap . 'px;box-sizing:border-box;';
-        $band_style  = 'display:flex;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:' . $gap . 'px;width:100%;box-sizing:border-box;';
-
         if ( $n_items <= 2 ) {
-            $output .= '<div class="vitrine-a3-frame vitrine-a3-frame--inline" style="' . esc_attr( $frame_style ) . '">';
+            $output .= '<div class="vitrine-a3-frame vitrine-a3-frame--inline">';
             $output .= $this->render_cards_group( $groups['left'], $card_bg, $title_color, $text_color, $card_border_radius, $card_border['css'], $icon_size, $icon_color, $card_height, $card_text_align, 'side', $card_style, $use_preset );
             $output .= $this->render_image_cell( $center_image, $image_border_radius, $center_bg, $image_shadow, $center_size, $center_image_fit );
             $output .= $this->render_cards_group( $groups['right'], $card_bg, $title_color, $text_color, $card_border_radius, $card_border['css'], $icon_size, $icon_color, $card_height, $card_text_align, 'side', $card_style, $use_preset );
             $output .= '</div>';
         } else {
-            $grid_style = 'display:grid;grid-template-columns:minmax(' . $side_min_w . 'px,1fr) minmax(120px,320px) minmax(' . $side_min_w . 'px,1fr);'
-                . 'grid-template-rows:auto auto auto;align-items:center;justify-content:center;'
-                . 'gap:' . $gap . 'px;max-width:1100px;margin:0 auto;width:100%;box-sizing:border-box;';
-            $side_cell_style = 'display:flex;flex-direction:column;align-items:stretch;width:100%;min-width:0;gap:' . $gap . 'px;grid-row:2;align-self:center;box-sizing:border-box;';
-            $left_cell_style  = $side_cell_style . 'grid-column:1;';
-            $right_cell_style = $side_cell_style . 'grid-column:3;';
-            $image_cell_style = 'grid-column:2;grid-row:2;width:100%;max-width:320px;min-width:0;justify-self:center;margin:0 auto;box-sizing:border-box;';
-            $band_top_style   = $band_style . 'grid-column:1/-1;grid-row:1;';
-            $band_bottom_style = $band_style . 'grid-column:1/-1;grid-row:3;';
+            $output .= '<div class="vitrine-a3-frame vitrine-a3-frame--grid">';
 
-            $output .= '<div class="vitrine-a3-frame vitrine-a3-frame--grid" style="' . esc_attr( $grid_style ) . '">';
-
-            $output .= '<div class="vitrine-a3-band vitrine-a3-band--top" style="' . esc_attr( $band_top_style ) . '">';
+            $output .= '<div class="vitrine-a3-band vitrine-a3-band--top">';
             $output .= $this->render_cards_group( $groups['top'], $card_bg, $title_color, $text_color, $card_border_radius, $card_border['css'], $icon_size, $icon_color, $card_height, $card_text_align, 'band', $card_style, $use_preset );
             $output .= '</div>';
 
-            $output .= '<div class="vitrine-a3-side vitrine-a3-side--left" style="' . esc_attr( $left_cell_style ) . '">';
+            $output .= '<div class="vitrine-a3-side vitrine-a3-side--left">';
             $output .= $this->render_cards_group( $groups['left'], $card_bg, $title_color, $text_color, $card_border_radius, $card_border['css'], $icon_size, $icon_color, $card_height, $card_text_align, 'side', $card_style, $use_preset );
             $output .= '</div>';
 
-            $output .= '<div class="vitrine-a3-core-image" style="' . esc_attr( $image_cell_style ) . '">';
+            $output .= '<div class="vitrine-a3-core-image">';
             $output .= $this->render_image_cell( $center_image, $image_border_radius, $center_bg, $image_shadow, $center_size, $center_image_fit );
             $output .= '</div>';
 
-            $output .= '<div class="vitrine-a3-side vitrine-a3-side--right" style="' . esc_attr( $right_cell_style ) . '">';
+            $output .= '<div class="vitrine-a3-side vitrine-a3-side--right">';
             $output .= $this->render_cards_group( $groups['right'], $card_bg, $title_color, $text_color, $card_border_radius, $card_border['css'], $icon_size, $icon_color, $card_height, $card_text_align, 'side', $card_style, $use_preset );
             $output .= '</div>';
 
-            $output .= '<div class="vitrine-a3-band vitrine-a3-band--bottom" style="' . esc_attr( $band_bottom_style ) . '">';
+            $output .= '<div class="vitrine-a3-band vitrine-a3-band--bottom">';
             $output .= $this->render_cards_group( $groups['bottom'], $card_bg, $title_color, $text_color, $card_border_radius, $card_border['css'], $icon_size, $icon_color, $card_height, $card_text_align, 'band', $card_style, $use_preset );
             $output .= '</div>';
 
@@ -203,13 +187,7 @@ class Vitrine_Element_Aranha3 extends Vitrine_Element {
         $image_fit = ( 'contain' === $image_fit ) ? 'contain' : 'cover';
         $style = 'border-radius:' . $border_radius . 'px;'
             . 'background:' . esc_attr( $bg_color ) . ';'
-            . 'box-shadow:' . esc_attr( $shadow ) . ';'
-            . 'height:' . $center_size . 'px;'
-            . 'min-height:' . $center_size . 'px;'
-            . 'max-height:' . $center_size . 'px;'
-            . 'flex:0 0 auto;'
-            . 'width:100%;'
-            . 'box-sizing:border-box;';
+            . 'box-shadow:' . esc_attr( $shadow ) . ';';
         $html  = '<div class="vitrine-a3-cell vitrine-a3-cell--image" style="' . esc_attr( $style ) . '">';
         if ( $center_image ) {
             $img_style = 'object-fit:' . $image_fit . ';object-position:center;width:100%;height:100%;display:block;';
@@ -249,9 +227,9 @@ class Vitrine_Element_Aranha3 extends Vitrine_Element {
         }
 
         if ( 'side' === $context ) {
-            $cell_style .= 'flex:0 1 auto;min-height:' . $card_height . 'px;height:auto;max-height:none;';
+            $cell_style .= 'min-height:var(--a3-card-h, ' . (int) $card_height . 'px);height:auto;max-height:none;';
         } else {
-            $cell_style .= 'min-height:' . $card_height . 'px;height:auto;max-height:none;flex:1 1 0;min-width:120px;';
+            $cell_style .= 'min-height:var(--a3-card-h, ' . (int) $card_height . 'px);height:auto;max-height:none;flex:1 1 auto;min-width:0;';
         }
 
         $output = '<div class="vitrine-a3-cell vitrine-a3-cell--card'

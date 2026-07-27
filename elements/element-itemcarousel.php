@@ -19,7 +19,9 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
 
     public function defaults() {
         return array(
-            'slides_per_view' => '3',
+            'slides_per_view_desktop' => '3',
+            'slides_per_view_tablet'  => '2',
+            'slides_per_view_mobile'  => '1',
             'gap'             => '20',
             'autoplay'        => '0',
             'autoplay_speed'  => '5000',
@@ -48,7 +50,10 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
 
     public function fields() {
         return array(
-            array( 'name' => 'slides_per_view', 'label' => 'Itens visíveis',           'type' => 'number' ),
+            array( 'name' => '_section_slides', 'label' => 'Slides visíveis por dispositivo', 'type' => 'heading' ),
+            array( 'name' => 'slides_per_view_desktop', 'label' => 'Desktop (≥901px)', 'type' => 'number' ),
+            array( 'name' => 'slides_per_view_tablet',  'label' => 'Tablet (562–900px)', 'type' => 'number' ),
+            array( 'name' => 'slides_per_view_mobile',  'label' => 'Mobile (≤561px)',  'type' => 'number' ),
             array( 'name' => 'gap',             'label' => 'Espaçamento (px)',         'type' => 'number' ),
             array( 'name' => 'autoplay',        'label' => 'Autoplay',                 'type' => 'select', 'options' => array( '0' => 'Desligado', '1' => 'Ligado' ) ),
             array( 'name' => 'autoplay_speed',  'label' => 'Intervalo autoplay (ms)',  'type' => 'number' ),
@@ -77,7 +82,13 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
     public function render( $settings, $children_html = '' ) {
         $s = wp_parse_args( $settings, $this->defaults() );
 
-        $slides_per_view = max( 1, min( 4, intval( $s['slides_per_view'] ) ) );
+        $slides_desktop = $this->clamp_slides_per_view(
+            isset( $s['slides_per_view_desktop'] ) ? $s['slides_per_view_desktop'] : ( isset( $s['slides_per_view'] ) ? $s['slides_per_view'] : 3 ),
+            3
+        );
+        $slides_tablet  = $this->clamp_slides_per_view( isset( $s['slides_per_view_tablet'] ) ? $s['slides_per_view_tablet'] : 2, 2 );
+        $slides_mobile  = $this->clamp_slides_per_view( isset( $s['slides_per_view_mobile'] ) ? $s['slides_per_view_mobile'] : 1, 1 );
+        $slides_min     = min( $slides_desktop, $slides_tablet, $slides_mobile );
         $gap             = max( 0, intval( $s['gap'] ) );
         $autoplay        = ! empty( $s['autoplay'] ) && '1' === (string) $s['autoplay'];
         $autoplay_speed  = max( 2000, intval( $s['autoplay_speed'] ) );
@@ -107,7 +118,9 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
             return '';
         }
 
-        $wrap_style = '--ic-slides:' . $slides_per_view . ';'
+        $wrap_style = '--ic-slides-desktop:' . $slides_desktop . ';'
+            . '--ic-slides-tablet:' . $slides_tablet . ';'
+            . '--ic-slides-mobile:' . $slides_mobile . ';'
             . '--ic-gap:' . $gap . 'px;'
             . '--ic-card-bg:' . $card_bg . ';'
             . '--ic-card-radius:' . $card_radius . 'px;'
@@ -127,7 +140,9 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
             . '--ic-text-weight:' . $text_weight . ';'
             . '--ic-text-align:' . $text_align . ';';
 
-        $data_attrs = ' data-slides="' . esc_attr( $slides_per_view ) . '"'
+        $data_attrs = ' data-slides-desktop="' . esc_attr( $slides_desktop ) . '"'
+            . ' data-slides-tablet="' . esc_attr( $slides_tablet ) . '"'
+            . ' data-slides-mobile="' . esc_attr( $slides_mobile ) . '"'
             . ' data-autoplay="' . ( $autoplay ? '1' : '0' ) . '"'
             . ' data-autoplay-speed="' . esc_attr( $autoplay_speed ) . '"';
 
@@ -141,14 +156,14 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
 
         $output .= '</div></div>';
 
-        if ( $show_arrows && count( $items ) > $slides_per_view ) {
+        if ( $show_arrows && count( $items ) > $slides_min ) {
             $output .= '<button type="button" class="vitrine-ic-arrow vitrine-ic-arrow--prev" aria-label="Anterior"><span class="dashicons dashicons-arrow-left-alt2"></span></button>';
             $output .= '<button type="button" class="vitrine-ic-arrow vitrine-ic-arrow--next" aria-label="Próximo"><span class="dashicons dashicons-arrow-right-alt2"></span></button>';
         }
 
-        if ( $show_dots && count( $items ) > 1 ) {
+        if ( $show_dots && count( $items ) > $slides_min ) {
             $output .= '<div class="vitrine-ic-dots" role="tablist">';
-            $max_index = max( 0, count( $items ) - $slides_per_view );
+            $max_index = max( 0, count( $items ) - $slides_min );
             for ( $d = 0; $d <= $max_index; $d++ ) {
                 $active = 0 === $d ? ' is-active' : '';
                 $output .= '<button type="button" class="vitrine-ic-dot' . $active . '" data-index="' . $d . '" aria-label="Slide ' . ( $d + 1 ) . '"></button>';
@@ -235,6 +250,14 @@ class Vitrine_Element_Itemcarousel extends Vitrine_Element {
         $allowed = array( '300', '400', '500', '600', '700', '800' );
         $weight  = (string) $weight;
         return in_array( $weight, $allowed, true ) ? $weight : '400';
+    }
+
+    private function clamp_slides_per_view( $value, $fallback = 1 ) {
+        $n = intval( $value );
+        if ( $n < 1 ) {
+            $n = intval( $fallback );
+        }
+        return max( 1, min( 4, $n ) );
     }
 }
 

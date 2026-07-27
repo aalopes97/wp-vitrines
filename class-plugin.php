@@ -15,6 +15,12 @@ class Vitrine_Plugin {
     }
 
     private function __construct() {
+        Vitrine_I18n::init();
+        Vitrine_Polylang::init();
+        if ( is_admin() ) {
+            Vitrine_Translations_Admin::init();
+        }
+
         add_action( 'init', array( $this, 'register_post_type' ) );
         add_filter( 'use_block_editor_for_post_type', array( $this, 'disable_gutenberg' ), 10, 2 );
         add_filter( 'single_template', array( $this, 'load_single_template' ) );
@@ -32,17 +38,17 @@ class Vitrine_Plugin {
      */
     public function register_post_type() {
         $labels = array(
-            'name'               => 'Vitrines',
-            'singular_name'      => 'Vitrine',
-            'add_new'            => 'Adicionar Nova',
-            'add_new_item'       => 'Adicionar Nova Vitrine',
-            'edit_item'          => 'Editar Vitrine',
-            'new_item'           => 'Nova Vitrine',
-            'view_item'          => 'Ver Vitrine',
-            'search_items'       => 'Buscar Vitrines',
-            'not_found'          => 'Nenhuma vitrine encontrada',
-            'not_found_in_trash' => 'Nenhuma vitrine na lixeira',
-            'menu_name'          => 'Vitrines',
+            'name'               => __( 'Vitrines', 'builder-vitrine' ),
+            'singular_name'      => __( 'Vitrine', 'builder-vitrine' ),
+            'add_new'            => __( 'Add New', 'builder-vitrine' ),
+            'add_new_item'       => __( 'Add New Vitrine', 'builder-vitrine' ),
+            'edit_item'          => __( 'Edit Vitrine', 'builder-vitrine' ),
+            'new_item'           => __( 'New Vitrine', 'builder-vitrine' ),
+            'view_item'          => __( 'View Vitrine', 'builder-vitrine' ),
+            'search_items'       => __( 'Search Vitrines', 'builder-vitrine' ),
+            'not_found'          => __( 'No vitrines found', 'builder-vitrine' ),
+            'not_found_in_trash' => __( 'No vitrines in trash', 'builder-vitrine' ),
+            'menu_name'          => __( 'Vitrines', 'builder-vitrine' ),
         );
 
         register_post_type( 'vitrine', array(

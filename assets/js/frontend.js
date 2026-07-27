@@ -164,6 +164,9 @@
     }
 
     function initItemCarousels() {
+        var IC_BREAK_TABLET = 900;
+        var IC_BREAK_MOBILE = 560;
+
         document.querySelectorAll('.vitrine-el-itemcarousel').forEach(function (root) {
             if (root.dataset.icReady === '1') return;
             root.dataset.icReady = '1';
@@ -172,18 +175,34 @@
             var slides = root.querySelectorAll('.vitrine-ic-slide');
             if (!track || !slides.length) return;
 
-            var slidesPerView = parseInt(root.dataset.slides || root.style.getPropertyValue('--ic-slides') || '3', 10);
+            function parseSlidesAttr(key, fallback) {
+                var v = parseInt(root.dataset[key] || '', 10);
+                if (isNaN(v) || v < 1) {
+                    v = parseInt(fallback, 10);
+                }
+                return Math.max(1, Math.min(4, v));
+            }
+
+            var slidesDesktop = parseSlidesAttr('slidesDesktop', root.style.getPropertyValue('--ic-slides-desktop') || '3');
+            var slidesTablet = parseSlidesAttr('slidesTablet', root.style.getPropertyValue('--ic-slides-tablet') || '2');
+            var slidesMobile = parseSlidesAttr('slidesMobile', root.style.getPropertyValue('--ic-slides-mobile') || '1');
+
+            // Compat: layouts antigos com data-slides único
+            if (!root.dataset.slidesDesktop && root.dataset.slides) {
+                slidesDesktop = parseSlidesAttr('slides', '3');
+            }
+
             var autoplay = root.dataset.autoplay === '1';
             var autoplaySpeed = parseInt(root.dataset.autoplaySpeed || '5000', 10);
             var index = 0;
-            var maxIndex = Math.max(0, slides.length - slidesPerView);
+            var maxIndex = 0;
             var timer = null;
 
             function getSlidesPerView() {
                 var w = root.offsetWidth;
-                if (w <= 560) return 1;
-                if (w <= 900) return Math.min(2, slidesPerView);
-                return slidesPerView;
+                if (w <= IC_BREAK_MOBILE) return slidesMobile;
+                if (w <= IC_BREAK_TABLET) return slidesTablet;
+                return slidesDesktop;
             }
 
             function update() {
@@ -201,6 +220,7 @@
                 root.querySelectorAll('.vitrine-ic-dot').forEach(function (dot) {
                     var dotIdx = parseInt(dot.dataset.index || '0', 10);
                     dot.classList.toggle('is-active', dotIdx === index);
+                    dot.hidden = dotIdx > maxIndex;
                 });
 
                 var prev = root.querySelector('.vitrine-ic-arrow--prev');
@@ -224,7 +244,7 @@
 
             function startAutoplay() {
                 stopAutoplay();
-                if (!autoplay || slides.length <= slidesPerView) return;
+                if (!autoplay || slides.length <= getSlidesPerView()) return;
                 timer = setInterval(next, autoplaySpeed);
             }
 
@@ -248,10 +268,28 @@
                 });
             });
 
+            var touchStartX = 0;
+            root.addEventListener('touchstart', function (e) {
+                if (!e.changedTouches || !e.changedTouches.length) return;
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            root.addEventListener('touchend', function (e) {
+                if (!e.changedTouches || !e.changedTouches.length) return;
+                var dx = e.changedTouches[0].screenX - touchStartX;
+                if (Math.abs(dx) < 48) return;
+                stopAutoplay();
+                if (dx < 0) next();
+                else prev();
+                startAutoplay();
+            }, { passive: true });
+
             root.addEventListener('mouseenter', stopAutoplay);
             root.addEventListener('mouseleave', startAutoplay);
 
-            window.addEventListener('resize', update);
+            window.addEventListener('resize', function () {
+                update();
+                startAutoplay();
+            });
             update();
             startAutoplay();
         });

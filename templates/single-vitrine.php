@@ -27,9 +27,9 @@ $vitrine_hero_desc     = ! empty( $vitrine_page_settings['hero_description'] ) ?
 $vitrine_hero_desc_sz  = ! empty( $vitrine_page_settings['hero_desc_size'] ) ? intval( $vitrine_page_settings['hero_desc_size'] ) : 18;
 $vitrine_hero_desc_clr = ! empty( $vitrine_page_settings['hero_desc_color'] ) ? $vitrine_page_settings['hero_desc_color'] : $vitrine_hero_txt_clr;
 $vitrine_hero_desc_mw  = ! empty( $vitrine_page_settings['hero_desc_max_width'] ) ? intval( $vitrine_page_settings['hero_desc_max_width'] ) : 0;
-$vitrine_hero_desc_style = 'color:' . esc_attr( $vitrine_hero_desc_clr ) . ';font-size:' . esc_attr( $vitrine_hero_desc_sz ) . 'px;';
+$vitrine_hero_desc_style = 'color:' . esc_attr( $vitrine_hero_desc_clr ) . ';';
 if ( $vitrine_hero_desc_mw > 0 ) {
-    $vitrine_hero_desc_style .= '--vitrine-hero-desc-max-w:' . esc_attr( $vitrine_hero_desc_mw ) . 'px;max-width:' . esc_attr( $vitrine_hero_desc_mw ) . 'px;';
+    $vitrine_hero_desc_style .= '--vitrine-hero-desc-max-w:' . esc_attr( $vitrine_hero_desc_mw ) . 'px;';
 }
 $vitrine_hero_date       = ! empty( $vitrine_page_settings['hero_date'] ) ? $vitrine_page_settings['hero_date'] : '';
 $vitrine_hero_date_label = $vitrine_hero_date ? Vitrine_Hero_Meta::format_hero_date( $vitrine_hero_date ) : '';
@@ -39,7 +39,7 @@ $vitrine_hero_date_align = ! empty( $vitrine_page_settings['hero_date_align'] ) 
 if ( ! in_array( $vitrine_hero_date_align, array( 'left', 'center', 'right' ), true ) ) {
     $vitrine_hero_date_align = 'right';
 }
-$vitrine_hero_date_style = 'color:' . esc_attr( $vitrine_hero_date_clr ) . ';font-size:' . esc_attr( $vitrine_hero_date_sz ) . 'px;';
+$vitrine_hero_date_style = 'color:' . esc_attr( $vitrine_hero_date_clr ) . ';';
 
 if ( $vitrine_bg_color ) {
     add_action( 'wp_head', function () use ( $vitrine_bg_color ) {
@@ -57,7 +57,11 @@ if ( 'left' === $vitrine_hero_align ) {
 $vitrine_hero_style = $vitrine_hero_image
     ? 'background:url(' . esc_url( $vitrine_hero_image ) . ') center/cover no-repeat;'
     : 'background:#333;';
-$vitrine_hero_style .= 'height:' . esc_attr( $vitrine_hero_height ) . 'px;';
+$vitrine_hero_style .= '--vitrine-hero-h:' . (int) $vitrine_hero_height . 'px;';
+$vitrine_hero_style .= '--vitrine-hero-title-size:' . (int) $vitrine_hero_font_sz . 'px;';
+$vitrine_hero_style .= '--vitrine-hero-desc-size:' . (int) $vitrine_hero_desc_sz . 'px;';
+$vitrine_hero_style .= '--vitrine-hero-date-size:' . (int) $vitrine_hero_date_sz . 'px;';
+$vitrine_hero_style .= 'min-height:var(--vitrine-hero-h);height:var(--vitrine-hero-h);';
 $vitrine_hero_style .= 'justify-content:' . esc_attr( $vitrine_hero_justify ) . ';';
 
 if ( $vitrine_show_header ) {
@@ -85,7 +89,7 @@ $vitrine_body_style = $vitrine_bg_color ? ' style="background-color:' . esc_attr
         <div class="vitrine-hero-overlay" style="background:rgba(0,0,0,<?php echo esc_attr( $vitrine_hero_opacity ); ?>);"></div>
         <div class="vitrine-hero-content" style="text-align:<?php echo esc_attr( $vitrine_hero_align ); ?>;">
             <?php if ( $vitrine_hero_text ) : ?>
-                <h1 class="vitrine-hero-text" style="color:<?php echo esc_attr( $vitrine_hero_txt_clr ); ?>;font-size:<?php echo esc_attr( $vitrine_hero_font_sz ); ?>px;font-weight:<?php echo esc_attr( $vitrine_hero_bold ); ?>;font-style:<?php echo esc_attr( $vitrine_hero_italic ); ?>;"><?php echo esc_html( $vitrine_hero_text ); ?></h1>
+                <h1 class="vitrine-hero-text" style="color:<?php echo esc_attr( $vitrine_hero_txt_clr ); ?>;font-weight:<?php echo esc_attr( $vitrine_hero_bold ); ?>;font-style:<?php echo esc_attr( $vitrine_hero_italic ); ?>;"><?php echo esc_html( $vitrine_hero_text ); ?></h1>
             <?php endif; ?>
             <?php if ( $vitrine_hero_desc ) : ?>
                 <div class="vitrine-hero-desc" style="<?php echo esc_attr( $vitrine_hero_desc_style ); ?>"><?php echo wp_kses_post( $vitrine_hero_desc ); ?></div>

@@ -44,7 +44,7 @@ class Vitrine_Editor {
 
         add_meta_box(
             'vitrine_builder',
-            'Vitrine Builder',
+            Vitrine_I18n::t( 'Vitrine Builder', 'ui.builder_title' ),
             array( $this, 'render_editor' ),
             'vitrine',
             'normal',
@@ -58,7 +58,7 @@ class Vitrine_Editor {
     public function register_page_css_meta_box() {
         add_meta_box(
             'vitrine_page_css',
-            'CSS Personalizado da Vitrine',
+            Vitrine_I18n::t( 'Custom vitrine CSS', 'ui.page_custom_css' ),
             array( $this, 'render_page_css_meta_box' ),
             'vitrine',
             'normal',
@@ -134,6 +134,34 @@ class Vitrine_Editor {
                 <?php endif; ?>
             </div>
             <div id="vitrine-topbar-actions">
+                <?php if ( Vitrine_Polylang::is_active() && $post->ID ) : ?>
+                    <?php
+                    $clone_targets = Vitrine_Polylang::get_clone_target_languages( $post->ID );
+                    if ( $clone_targets ) :
+                        ?>
+                    <div id="vitrine-polylang-clone" class="vitrine-polylang-clone">
+                        <label for="vitrine-clone-lang" class="screen-reader-text"><?php echo esc_html( Vitrine_I18n::t( 'Clone to language', 'ui.clone_to_language' ) ); ?></label>
+                        <select id="vitrine-clone-lang">
+                            <option value=""><?php echo esc_html( Vitrine_I18n::t( 'Clone to language', 'ui.clone_to_language' ) ); ?>…</option>
+                            <?php foreach ( $clone_targets as $target ) : ?>
+                                <option value="<?php echo esc_attr( $target['slug'] ); ?>">
+                                    <?php
+                                    echo esc_html( $target['name'] );
+                                    if ( $target['post_id'] ) {
+                                        echo ' (' . esc_html__( 'update', 'builder-vitrine' ) . ')';
+                                    } else {
+                                        echo ' (' . esc_html__( 'create', 'builder-vitrine' ) . ')';
+                                    }
+                                    ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" id="vitrine-clone-lang-btn" class="button" title="<?php echo esc_attr( Vitrine_I18n::t( 'Creates or updates the Polylang translation with the same layout and content.', 'ui.clone_to_language_help' ) ); ?>">
+                            <?php echo esc_html( Vitrine_I18n::t( 'Clone to language', 'ui.clone_to_language' ) ); ?>
+                        </button>
+                    </div>
+                    <?php endif; ?>
+                <?php endif; ?>
                 <span class="spinner"></span>
                 <button type="button" id="vitrine-preview-btn" class="button button-large">
                     <span class="dashicons dashicons-visibility"></span> Visualizar
@@ -204,24 +232,7 @@ class Vitrine_Editor {
 
         // Dados para o JS
         $elements_raw = Vitrine_Plugin::load_elements();
-        $elements_js  = array();
-        foreach ( $elements_raw as $slug => $el ) {
-            $fields_data = array();
-            foreach ( $el->fields() as $field ) {
-                $f = $field;
-                if ( isset( $field['options'] ) && is_array( $field['options'] ) ) {
-                    $f['options'] = $field['options'];
-                }
-                $fields_data[] = $f;
-            }
-            $elements_js[ $slug ] = array(
-                'slug'     => $slug,
-                'label'    => $el->label(),
-                'icon'     => $el->icon(),
-                'defaults' => $el->defaults(),
-                'fields'   => $fields_data,
-            );
-        }
+        $elements_js  = Vitrine_I18n::localize_elements_for_editor( $elements_raw );
 
         $post_id = get_the_ID();
         $layout  = get_post_meta( $post_id, '_vitrine_layout', true );
@@ -244,6 +255,10 @@ class Vitrine_Editor {
             'layout'       => $layout ? $layout : array(),
             'pageSettings' => $page_settings,
             'iconPicker'   => Vitrine_Icons::get_picker_data(),
+            'i18n'         => Vitrine_I18n::get_editor_js_strings(),
+            'polylang'     => array(
+                'active' => Vitrine_Polylang::is_active(),
+            ),
         ) );
     }
 
@@ -262,29 +277,29 @@ class Vitrine_Editor {
                 <!-- Sidebar esquerda: elementos disponíveis -->
                 <aside id="vitrine-sidebar-left" class="vitrine-sidebar">
                     <div class="vitrine-sidebar-header">
-                        <h3>Elementos</h3>
-                        <button type="button" class="vitrine-sidebar-collapse" data-panel="left" title="Recolher painel de elementos">
+                        <h3><?php echo esc_html( Vitrine_I18n::t( 'Elements', 'ui.elements' ) ); ?></h3>
+                        <button type="button" class="vitrine-sidebar-collapse" data-panel="left" title="<?php echo esc_attr( Vitrine_I18n::t( 'Collapse elements panel', 'ui.collapse_elements_panel' ) ); ?>">
                             <span class="dashicons dashicons-arrow-left-alt2"></span>
                         </button>
                     </div>
                     <div class="vitrine-sidebar-body">
                         <div class="vitrine-element-search-wrap">
                             <span class="dashicons dashicons-search" aria-hidden="true"></span>
-                            <input type="search" id="vitrine-element-search" placeholder="Buscar elemento..." autocomplete="off" spellcheck="false" aria-label="Buscar elemento">
+                            <input type="search" id="vitrine-element-search" placeholder="<?php echo esc_attr( Vitrine_I18n::t( 'Search element...', 'ui.search_elements' ) ); ?>" autocomplete="off" spellcheck="false" aria-label="<?php echo esc_attr( Vitrine_I18n::t( 'Search element...', 'ui.search_elements' ) ); ?>">
                         </div>
                         <div id="vitrine-element-list">
                             <?php foreach ( $elements as $slug => $el ) : ?>
-                                <div class="vitrine-element-item" data-type="<?php echo esc_attr( $slug ); ?>" data-label="<?php echo esc_attr( $el->label() ); ?>">
+                                <div class="vitrine-element-item" data-type="<?php echo esc_attr( $slug ); ?>" data-label="<?php echo esc_attr( Vitrine_I18n::element_label( $slug, $el->label() ) ); ?>">
                                     <span class="dashicons <?php echo esc_attr( $el->icon() ); ?>"></span>
-                                    <span><?php echo esc_html( $el->label() ); ?></span>
+                                    <span><?php echo esc_html( Vitrine_I18n::element_label( $slug, $el->label() ) ); ?></span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        <p id="vitrine-element-list-empty" class="vitrine-element-list-empty" hidden>Nenhum elemento encontrado.</p>
+                        <p id="vitrine-element-list-empty" class="vitrine-element-list-empty" hidden><?php echo esc_html( Vitrine_I18n::t( 'No elements found.', 'ui.no_elements_found' ) ); ?></p>
                     </div>
-                    <button type="button" class="vitrine-sidebar-expand" data-panel="left" title="Mostrar painel de elementos">
+                    <button type="button" class="vitrine-sidebar-expand" data-panel="left" title="<?php echo esc_attr( Vitrine_I18n::t( 'Show elements panel', 'ui.show_elements_panel' ) ); ?>">
                         <span class="dashicons dashicons-arrow-right-alt2"></span>
-                        <span class="vitrine-sidebar-expand-text">Elementos</span>
+                        <span class="vitrine-sidebar-expand-text"><?php echo esc_html( Vitrine_I18n::t( 'Elements', 'ui.elements' ) ); ?></span>
                     </button>
                 </aside>
 
@@ -293,7 +308,7 @@ class Vitrine_Editor {
                 <!-- Canvas central -->
                 <main id="vitrine-canvas-wrapper">
                     <div id="vitrine-canvas">
-                        <p class="vitrine-canvas-placeholder">Arraste elementos aqui</p>
+                        <p class="vitrine-canvas-placeholder"><?php echo esc_html( Vitrine_I18n::t( 'Drag elements here', 'ui.canvas_placeholder' ) ); ?></p>
                     </div>
                 </main>
 
@@ -304,24 +319,24 @@ class Vitrine_Editor {
                     <div id="vitrine-settings-sidebar-header">
                         <div id="vitrine-settings-el-info">
                             <span id="vitrine-settings-el-icon" class="dashicons dashicons-admin-settings"></span>
-                            <span id="vitrine-settings-el-label">Configurações</span>
+                            <span id="vitrine-settings-el-label"><?php echo esc_html( Vitrine_I18n::t( 'Settings', 'ui.settings' ) ); ?></span>
                         </div>
-                        <button type="button" class="vitrine-sidebar-collapse" data-panel="right" title="Recolher painel de configurações">
+                        <button type="button" class="vitrine-sidebar-collapse" data-panel="right" title="<?php echo esc_attr( Vitrine_I18n::t( 'Collapse settings panel', 'ui.collapse_settings_panel' ) ); ?>">
                             <span class="dashicons dashicons-arrow-right-alt2"></span>
                         </button>
-                        <button type="button" id="vitrine-settings-sidebar-close" title="Fechar painel">
+                        <button type="button" id="vitrine-settings-sidebar-close" title="<?php echo esc_attr( Vitrine_I18n::t( 'Close panel', 'ui.close_settings_panel' ) ); ?>">
                             <span class="dashicons dashicons-no-alt"></span>
                         </button>
                     </div>
                     <div id="vitrine-settings-panel">
                         <div class="vitrine-settings-empty-state">
                             <span class="dashicons dashicons-edit-large"></span>
-                            <p>Clique em um elemento no canvas para editar as suas configurações.</p>
+                            <p><?php echo esc_html( Vitrine_I18n::t( 'Click an element on the canvas to edit its settings.', 'ui.settings_empty' ) ); ?></p>
                         </div>
                     </div>
-                    <button type="button" class="vitrine-sidebar-expand" data-panel="right" title="Mostrar painel de configurações">
+                    <button type="button" class="vitrine-sidebar-expand" data-panel="right" title="<?php echo esc_attr( Vitrine_I18n::t( 'Show settings panel', 'ui.show_settings_panel' ) ); ?>">
                         <span class="dashicons dashicons-arrow-left-alt2"></span>
-                        <span class="vitrine-sidebar-expand-text">Configurações</span>
+                        <span class="vitrine-sidebar-expand-text"><?php echo esc_html( Vitrine_I18n::t( 'Settings', 'ui.settings' ) ); ?></span>
                     </button>
                 </aside>
             </div>
